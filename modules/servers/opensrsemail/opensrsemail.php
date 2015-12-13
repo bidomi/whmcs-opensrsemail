@@ -37,7 +37,6 @@ function opensrsemail_ClientAreaCustomButtonArray() {
  */
 function opensrsemail_CreateAccount($params) {
 	$openSRS = new openSRS_mail($params["configoption1"], $params["configoption2"], $params["configoption3"], $params["configoption4"], $params["configoption5"]);
-	
 	try {
 		$result = $openSRS->createDomain($params["domain"]);
 		if($result["is_success"]) return "success";
@@ -103,10 +102,11 @@ function opensrsemail_TerminateAccount($params) {
  * @return array the output parameters to be displayed on the page
  */
 function opensrsemail_ClientArea($params) {
+
+
 	if(!isset($_GET["modop"]) && !$_GET["modop"] == "custom") {
 		// standard request without any custom operation being called, load basic pages
 		$controller = new opensrsemail_Controller($params);
-		
 		if(isset($_POST["modaction"])) {
 			// process the posted action
 			if($_POST["modaction"] == "delete-workgroup") {
@@ -116,7 +116,7 @@ function opensrsemail_ClientArea($params) {
 			}
 		} else if(isset($_GET["modaction"]) && $_GET["modaction"] == "workgroups") {
 			return $controller->listWorkgroups($params);
-		}
+		}   
 		
 		return $controller->listMailboxes($params);
 	}
@@ -178,23 +178,30 @@ class opensrsemail_Controller {
 	 */
 	public function listMailboxes($params) {
 		$openSRS = new openSRS_mail($params["configoption1"], $params["configoption2"], $params["configoption3"], $params["configoption4"], $params["configoption5"]);
-		
+
 		try {
+
+
+			
+
+
 			$mailboxesAllowed = $params["configoptions"]["Mailboxes"];
 			$forwardsAllowed = $params["configoptions"]["Forwards"];
 
-			$result = $openSRS->getNumDomainMailboxes($params["domain"]);
+			//$result = $openSRS->getNumDomainMailboxes($params["domain"]);
+			//$mailboxCount = $result["attributes"]["mailbox"];
+			//$forwardCount = $result["attributes"]["forward"];   
 			
-			$mailboxCount = $result["attributes"]["mailbox"];
-			$forwardCount = $result["attributes"]["forward"];
-			
+         
 			$result = $openSRS->getDomainMailboxes($params["domain"]);
-			
+
+			$mailboxCount = $result["attributes"]["mailbox"];
+			$forwardCount = $result["attributes"]["forward"];   
+
 			if($result["is_success"]) {
 				$mailboxes = isset($result["attributes"]["list"]) ? $result["attributes"]["list"] : array();
-
 				foreach($mailboxes as $index => $mailbox) $mailboxes[$index]["uctype"] = ucwords($mailbox["type"]);
-				
+
 				$this->vars["addMailbox"] = $mailboxesAllowed > $mailboxCount;
 				$this->vars["deleteMailbox"] = $mailboxCount > $mailboxesAllowed;
 				$this->vars["addForward"] = $forwardsAllowed > $forwardCount;
@@ -223,9 +230,9 @@ class opensrsemail_Controller {
 		
 		try {
 			$result = $openSRS->getDomainWorkgroups($params["domain"]);
-
+            
 			$workgroups = isset($result["attributes"]["list"]) ? $result["attributes"]["list"] : array();
-			
+
 			if($result["is_success"]) {
 				$this->vars["workgroups"] = $workgroups;
 				if(isset($_GET["added"])) {
@@ -237,7 +244,7 @@ class opensrsemail_Controller {
 		} catch(Exception $e) {
 			$this->vars["error"] = array("Communication error, please contact the administrator.");
 		}
-
+        
 		return $this->returnDisplay("workgroups");
 	}
 	
@@ -250,7 +257,6 @@ class opensrsemail_Controller {
 		$openSRS = new openSRS_mail($params["configoption1"], $params["configoption2"], $params["configoption3"], $params["configoption4"], $params["configoption5"]);
 	
 		$type = isset($_GET["type"]) ? $_GET["type"] : "mailbox";
-		
 		$this->vars["type"] = $type;
 		
 		try {
@@ -260,10 +266,11 @@ class opensrsemail_Controller {
 
 			if($type == "mailbox" ) {
 				if(isset($_GET["mailbox"]) && !empty($_GET["mailbox"])) {
-					$result = $openSRS->getMailbox($params["domain"], $_GET["mailbox"]);
-	
+
+                    $result = $openSRS->getMailbox($params["domain"], $_GET["mailbox"]);
+
 					$result["attributes"]["workgroup"] = $_GET["workgroup"];
-					
+
 					if($result["is_success"]) {
 						$this->vars["editable"] = true;
 						$this->vars["mailbox"] = $result["attributes"];
@@ -307,16 +314,29 @@ class opensrsemail_Controller {
 				if(isset($_GET["mailbox"]) && !empty($_GET["mailbox"])) {
 					$result["attributes"]["workgroup"] = $_GET["workgroup"];
 					
+                    //$result = $openSRS->getMailbox($params["domain"], $_GET["mailbox"]);
 					$result = $openSRS->getMailboxForwardOnly($params["domain"], $_GET["mailbox"]);
+
 					
 					$result["attributes"]["mailbox"] = $_GET["mailbox"];
+					
+					if (!empty($this->vars["error"]))
+					{
+						
+						$result["attributes"]['forward_email'] = $this->getVar("forwardEmail");
+						$result["attributes"]['aliases'] = $this->getVar("aliases");
+
+					}
 					
 					if($result["is_success"]) {
 						$this->vars["mailbox"] = $result["attributes"];
 						$this->vars["new"] = false;
 					} else {
+
 						$this->vars["error"] = array($result["response_text"]);
 					}
+
+
 				} else {
 					$result = $openSRS->getNumDomainMailboxes($params["domain"]);
 					
@@ -354,6 +374,7 @@ class opensrsemail_Controller {
 				}	
 			}
 		} catch(Exception $e) {
+			
 			$this->vars["error"][] = "Communication error, please contact the administrator.";
 		}
 	
@@ -382,55 +403,121 @@ class opensrsemail_Controller {
 	 */
 	public function saveMailbox($params) {
 		$openSRS = new openSRS_mail($params["configoption1"], $params["configoption2"], $params["configoption3"], $params["configoption4"], $params["configoption5"]);
-
 		$success = false;
-		
 		if($this->getVar("new")) {
-			$mailboxName = $this->getVar("mailbox");
-			
-			$result = $openSRS->getMailbox($params["domain"], $mailboxName);
-			
-			if($result["is_success"]) {
-				
-				$this->vars["error"][] = "The mailbox cannot be added because it already exists.";
-				
-				return $this->addEditMailbox($params);
-			} else if($result["response_code"] == 17) {
-				
-				$password = $this->getVar("password");
-				$passwordConfirm = $this->getVar("passwordConfirm");
-				$mailbox = $this->getVar("mailbox");
-				
-				if(empty($password)) $this->vars["error"][] = "The password cannot be empty";
-				if($password != $passwordConfirm) $this->vars["error"][] = "The passwords do not match";
-				if(empty($mailbox)) $this->vars["error"][] = "The mailbox name cannot be empty";
-				
-				if(empty($this->vars["error"])) {
-					$result = $openSRS->createMailbox(
-						$params["domain"],
-						$mailboxName,
-						$this->getVar("workgroup"),
-						$password,
-						$this->getVar("firstName"),
-						$this->getVar("lastName"),
-						$this->getVar("title"),
-						$this->getVar("phone"),
-						$this->getVar("fax")
-					);
-					
-					if($result["is_success"]) {
-						$success = "&added=true";
-					} else {
-						$this->vars["error"][] = $result["response_text"];
+            //$mailboxName = $this->getVar("mailbox");
+			$mailboxName = $this->getVar("mailbox")."@".$params["domain"];
+            $result = $openSRS->getMailbox($params["domain"], $mailboxName);
+            if (!filter_var($mailboxName, FILTER_VALIDATE_EMAIL)) 
+            {
+                  $this->vars["error"][] = "Invalid Email format. (ex. john.doe or john_doe or johndoe)";
+            }
+            elseif(strlen($this->getVar("title")) > 60 )
+            {
+                  $this->vars["error"][] = "Maximum 60 charcters are allowed for Title. (ex. Ms. or Mr.)";
+            }
+            elseif(strlen($this->getVar("firstName")) > 255 )
+            {
+                  $this->vars["error"][] = "Maximum 255 charcters are allowed for First Name.";
+            }
+            elseif(strlen($this->getVar("lastName")) > 255 )
+            {
+                  $this->vars["error"][] = "Maximum 255 charcters are allowed for Last Name.";
+            }
+            elseif(strlen($this->getVar("phone")) > 30 )
+            {
+                  $this->vars["error"][] = "Maximum 30 charcters are allowed for Phone.";
+            }
+            elseif(strlen($this->getVar("fax")) > 30 )
+            {
+                  $this->vars["error"][] = "Maximum 30 charcters are allowed for Fax.";
+            }
+            else
+            {
+			    if($result["is_success"]) {
+				    print_r($result);
+				    $this->vars["error"][] = "The mailbox cannot be added because it already exists.";
+				    
+				    return $this->addEditMailbox($params);
+			    } else if($result["response_code"] == 2) {
+				    
+				    $password = $this->getVar("password");
+				    $passwordConfirm = $this->getVar("passwordConfirm");
+				    $mailbox = $this->getVar("mailbox");
+				    
+				    if(empty($password)) $this->vars["error"][] = "The password cannot be empty";
+				    if($password != $passwordConfirm) $this->vars["error"][] = "The passwords do not match";
+				    if(empty($mailbox)) $this->vars["error"][] = "The mailbox name cannot be empty";
+
+
+					$aliases = $this->getVar("aliases");
+						
+					if(!empty($aliases))
+					{
+						$aliasAddresses = explode("\n", $aliases);
+						
+						foreach($aliasAddresses as $alid => $aliasAddress) {
+
+						    if (!$aliasAddress)
+						    {
+						    	unset($aliasAddress[$alid]);
+						    	continue;
+						    }
+
+							$aliasAddress = trim($aliasAddress);
+							$aliasAddresses[$alid] = $aliasAddress;
+							
+							if(!filter_var($aliasAddress, FILTER_VALIDATE_EMAIL)) {
+								$this->vars["error"][] = "The alias address \"".$aliasAddress."\" is not valid.";
+							}
+						}
+
+						$aliasAddresses = $openSRS->validateAliasForward($params["domain"], $this->getVar("mailbox"), $aliasAddresses);
 					}
-				}
-			} else {
-				$this->vars["error"][] = $result["response_text"];
-			}
+					
+
+
+				    
+				    if(empty($this->vars["error"])) {
+					    /*$result = $openSRS->createMailbox(
+						    $params["domain"],
+						    $mailboxName,
+						    $this->getVar("workgroup"),
+						    $password,
+						    $this->getVar("firstName"),
+						    $this->getVar("lastName"),
+						    $this->getVar("title"),
+						    $this->getVar("phone"),
+						    $this->getVar("fax")
+					    );*/
+                        
+                        $result = $openSRS->createMailbox(
+                            $params["domain"],
+                            $mailboxName,
+                            $this->getVar("workgroup"),
+                            $password,
+                            $this->getVar("firstName"),
+                            $this->getVar("lastName"),
+                            $this->getVar("title"),
+                            $this->getVar("phone"),
+                            $this->getVar("fax"),
+                            $aliasAddresses,
+							$_GET["type"]
+                        );
+					    
+					    if($result["is_success"]) {
+						    $success = "&added=true";
+					    } else {
+						    $this->vars["error"][] = $result["response_text"];
+					    }
+				    }
+			    } else {
+				    $this->vars["error"][] = $result["response_text"];
+			    }
+            }
 		} else {
 			$mailboxName = $this->getVar("mailbox");
-			
-			$result = $openSRS->getMailbox($params["domain"], $mailboxName);
+            $result = $openSRS->getMailbox($params["domain"], $mailboxName);
 
 			if($result["is_success"]) {
 				
@@ -439,9 +526,44 @@ class opensrsemail_Controller {
 				$mailbox = $this->getVar("mailbox");
 				
 				if(!empty($password) && $password != $passwordConfirm) $this->vars["error"][] = "The passwords do not match";
+                elseif(strlen($this->getVar("title")) > 60 ) $this->vars["error"][] = "Maximum 60 charcters are allowed for Title. (ex. Ms. or Mr.)";
+                elseif(strlen($this->getVar("firstName")) > 255 ) $this->vars["error"][] = "Maximum 255 charcters are allowed for First Name.";
+                elseif(strlen($this->getVar("lastName")) > 255 ) $this->vars["error"][] = "Maximum 255 charcters are allowed for Last Name.";
+                elseif(strlen($this->getVar("phone")) > 30 ) $this->vars["error"][] = "Maximum 30 charcters are allowed for Phone.";
+                elseif(strlen($this->getVar("fax")) > 30 ) $this->vars["error"][] = "Maximum 30 charcters are allowed for Fax.";
 				
+
+
+
+				$aliases = $this->getVar("aliases");
+						
+				if(!empty($aliases))
+				{
+					$aliasAddresses = explode("\n", $aliases);
+					
+					foreach($aliasAddresses as $alid => $aliasAddress) {
+
+					    if (!$aliasAddress)
+					    {
+					    	unset($aliasAddress[$alid]);
+					    	continue;
+					    }
+
+						$aliasAddress = trim($aliasAddress);
+						$aliasAddresses[$alid] = $aliasAddress;
+						
+						if(!filter_var($aliasAddress, FILTER_VALIDATE_EMAIL)) {
+							$this->vars["error"][] = "The alias address \"".$aliasAddress."\" is not valid.";
+						}
+					}
+
+					$aliasAddresses = $openSRS->validateAliasForward($params["domain"], $this->getVar("mailbox"), $aliasAddresses);
+				}
+
+
+
 				if(empty($this->vars["error"])) {
-					$result = $openSRS->changeMailbox(
+					/*$result = $openSRS->changeMailbox(
 						$params["domain"],
 						$mailboxName,
 						$this->getVar("workgroup"),
@@ -451,8 +573,21 @@ class opensrsemail_Controller {
 						$this->getVar("title"),
 						$this->getVar("phone"),
 						$this->getVar("fax")
-					);
-					
+					);*/
+					$result = $openSRS->changeMailbox(
+                        $params["domain"],
+                        $mailboxName,
+                        $this->getVar("workgroup"),
+                        $password,
+                        $this->getVar("firstName"),
+                        $this->getVar("lastName"),
+                        $this->getVar("title"),
+                        $this->getVar("phone"),
+                        $this->getVar("fax"),                        
+                        $aliasAddresses,
+                        $_GET["type"]
+                        
+                    );
 					if($result["is_success"]) {
 						$success = "&edited=true";
 					} else {
@@ -474,52 +609,133 @@ class opensrsemail_Controller {
 	 * @return array the vars and template for the forward form when there are errors
 	 */
 	public function saveForward($params) {
+
 		$openSRS = new openSRS_mail($params["configoption1"], $params["configoption2"], $params["configoption3"], $params["configoption4"], $params["configoption5"]);
 
 		$success = false;
 		
 		if($this->getVar("new")) {
-			$mailboxName = $this->getVar("mailbox");
-			
-			$result = $openSRS->getMailbox($params["domain"], $mailboxName);
-			
-			if($result["is_success"]) {
-				
-				$this->vars["error"][] = "The mailbox cannot be added because it already exists.";
-				
-				return $this->addEditMailbox($params);
-			} else if($result["response_code"] == 17) {
-				
-				$forwards = $this->getVar("forwardEmail");
-				
-				if(empty($forwards)) $this->vars["error"][] = "You must provide addresses to forward to.";
-				else {
-					$forwardAddresses = explode(",", $forwards);
-					
-					foreach($forwardAddresses as $forwardAddress) {
-						if(!filter_var($forwardAddress, FILTER_VALIDATE_EMAIL)) {
-							$this->vars["error"][] = "The address ".$forwardAddress." is not valid.";
+			//$mailboxName = $this->getVar("mailbox");
+			$mailboxName = $this->getVar("mailbox")."@".$params["domain"];
+            if (!filter_var($mailboxName, FILTER_VALIDATE_EMAIL)) 
+            {
+                  $this->vars["error"][] = "Invalid Email format. (ex. john.doe or john_doe or johndoe)";
+            }
+            else
+            {
+			    $result = $openSRS->getMailbox($params["domain"], $mailboxName);
+			    if($result["is_success"]) {
+				    
+				    $this->vars["error"][] = "The mailbox cannot be added because it already exists.";
+				    
+				    return $this->addEditMailbox($params);
+			    } else if($result["response_code"] == 2) {
+				    
+				    
+				    // forwardEmail
+				    $forwards = $this->getVar("forwardEmail");
+				    
+				    if(empty($forwards)) $this->vars["error"][] = "You must provide addresses to forward to.";
+				    else {
+					    $forwardAddresses = explode("\n", $forwards);
+					    
+						foreach($forwardAddresses as $fwid => $forwardAddress) {
+
+						    if (!$forwardAddress)
+						    {
+						    	unset($forwardAddresses[$fwid]);
+						    	continue;
+						    }
+
+						    $forwardAddress = trim($forwardAddress);
+						    $forwardAddresses[$fwid] = $forwardAddress;
+
+						    if(!filter_var($forwardAddress, FILTER_VALIDATE_EMAIL)) {
+							    $this->vars["error"][] = "The address \"".$forwardAddress."\" is not valid.";							    
+						    }
+					    }
+				    }
+				    $forwardAddresses = $openSRS->validateAliasForward($params["domain"], $this->getVar("mailbox"), $forwardAddresses);
+				    if (count($forwardAddresses) < 1)
+				    {
+						$this->vars["error"][] = "You must provide addresses to forward to.";
+				    }
+
+
+
+			    	// aliases
+					$aliases = $this->getVar("aliases");
+						
+					if(!empty($aliases))
+					{
+						$aliasAddresses = explode("\n", $aliases);
+						
+						foreach($aliasAddresses as $alid => $aliasAddress) {
+
+
+						    if (!$aliasAddress)
+						    {
+						    	unset($aliasAddress[$alid]);
+						    	continue;
+						    }
+
+							$aliasAddress = trim($aliasAddress);
+							$aliasAddresses[$alid] = $aliasAddress;
+							
+							if(!filter_var($aliasAddress, FILTER_VALIDATE_EMAIL)) {
+								$this->vars["error"][] = "The alias address \"".$aliasAddress."\" is not valid.";
+							}
 						}
 					}
-				}
-				
-				if(empty($this->vars["error"])) {
-					$result = $openSRS->createMailboxForwardOnly(
-						$params["domain"],
-						$mailboxName,
-						$this->getVar("workgroup"),
-						$forwards
-					);
-					
-					if($result["is_success"]) {
-						$success = "&added=true";
-					} else {
-						$this->vars["error"][] = $result["response_text"];
-					}
-				}
-			} else {
-				$this->vars["error"][] = $result["response_text"];
-			}
+				    $aliasAddresses = $openSRS->validateAliasForward($params["domain"], $this->getVar("mailbox"), $aliasAddresses);
+
+				    foreach($forwardAddresses as $fwaddress)
+				    {
+
+					    foreach($aliasAddresses as $aladdress)
+					    {
+					    	if ($aladdress == $fwaddress)
+					    	{
+					    		$this->vars["error"][] = "Email loop ({$fwaddress}).";	
+					    	}
+					    	
+					    }
+
+
+				    }
+
+
+
+
+                
+				    if(empty($this->vars["error"])) {
+					    /*$result = $openSRS->createMailboxForwardOnly(
+						    $params["domain"],
+						    $mailboxName,
+						    $this->getVar("workgroup"),
+						    $forwards
+					    );*/
+					    
+                        $result = $openSRS->createMailboxForwardOnly(
+                            $params["domain"],
+                            $mailboxName,
+                            $this->getVar("workgroup"),
+                            $forwardAddresses,
+                            $aliasAddresses,
+                            $_GET['type']
+
+                        );
+                        
+					    if($result["is_success"]) {
+						    $success = "&added=true";
+					    } else {
+						    $this->vars["error"][] = $result["response_text"];
+					    }
+				    }
+			    } else {
+				    $this->vars["error"][] = $result["response_text"];
+			    }
+            }
 		} else {
 			$mailboxName = $this->getVar("mailbox");
 			
@@ -529,23 +745,93 @@ class opensrsemail_Controller {
 				
 				$forwards = $this->getVar("forwardEmail");
 				
+				
 				if(empty($forwards)) $this->vars["error"][] = "You must provide addresses to forward to.";
 				else {
-					$forwardAddresses = explode(",", $forwards);
+					$forwardAddresses = explode("\n", $forwards);
 					
-					foreach($forwardAddresses as $forwardAddress) {
+					foreach($forwardAddresses as $fwid => $forwardAddress) {
+
+
+					    if (!$forwardAddress)
+					    {
+					    	unset($forwardAddresses[$fwid]);
+					    	continue;
+					    }
+
+
+						$forwardAddress = trim($forwardAddress);
+						$forwardAddresses[$fwid] = $forwardAddress;
+						
 						if(!filter_var($forwardAddress, FILTER_VALIDATE_EMAIL)) {
-							$this->vars["error"][] = "The address ".$forwardAddress." is not valid.";
+							$this->vars["error"][] = "The address \"".$forwardAddress."\" is not valid.";							
 						}
 					}
 				}
+			    $forwardAddresses = $openSRS->validateAliasForward($params["domain"], $this->getVar("mailbox")."@".$params["domain"], $forwardAddresses);
+			    if (count($forwardAddresses) < 1)
+			    {
+					$this->vars["error"][] = "You must provide addresses to forward to.";
+			    }
+
+
+
+				$aliases = $this->getVar("aliases");
+					
+				if(!empty($aliases))
+				{
+					$aliasAddresses = explode("\n", $aliases);
+					
+					foreach($aliasAddresses as $alid => $aliasAddress) {
+
+					    if (!$aliasAddress)
+					    {
+					    	unset($aliasAddress[$alid]);
+					    	continue;
+					    }
+
+						$aliasAddress = trim($aliasAddress);
+						$aliasAddresses[$alid] = $aliasAddress;
+						
+						if(!filter_var($aliasAddress, FILTER_VALIDATE_EMAIL)) {
+							$this->vars["error"][] = "The alias address \"".$aliasAddress."\" is not valid.";							
+						}
+					}
+				}
+
+			    $aliasAddresses = $openSRS->validateAliasForward($params["domain"], $this->getVar("mailbox")."@".$params["domain"], $aliasAddresses);
+
+			    foreach($forwardAddresses as $fwaddress)
+			    {
+
+				    foreach($aliasAddresses as $aladdress)
+				    {
+				    	if ($aladdress == $fwaddress)
+				    	{
+				    		$this->vars["error"][] = "Email loop ({$fwaddress}).";	
+				    	}
+				    	
+				    }
+
+
+			    }
+
+				
 				
 				if(empty($this->vars["error"])) {
-					$result = $openSRS->changeMailboxForwardOnly(
+					/*$result = $openSRS->changeMailboxForwardOnly(
 						$params["domain"],
 						$mailboxName,
 						$forwards
-					);
+					); */
+                    
+                    $result = $openSRS->changeMailboxForwardOnly(
+                        $params["domain"],
+                        $mailboxName,
+                        $forwardAddresses,
+                        $aliasAddresses,
+                        $_GET['type']
+                    );
 					
 					if($result["is_success"]) {
 						$success = "&edited=true";
@@ -553,6 +839,7 @@ class opensrsemail_Controller {
 						$this->vars["error"][] = $result["response_text"];
 					}
 				}
+
 			} else {
 				$this->vars["error"][] = $result["response_text"];
 			}
@@ -631,11 +918,20 @@ class opensrsemail_Controller {
 		
 		if(empty($workgroup)) {
 			$this->vars["error"][] = "The name cannot be empty.";
-		} else {
+		}
+        elseif(strlen($workgroup) > 30)
+        {
+            $this->vars["error"][] = "Maximum 30 characters are allowed for workgroup name.";
+        }
+        elseif(!preg_match("/^[a-zA-Z0-9_\-]+$/", $workgroup))
+        {
+            $this->vars["error"][] = "The workgroup name cannot contain space and special characters. (Only allowed Alphnumerics, Hyphen and Underscore.)";
+        }
+        else
+        {
 			$result = $openSRS->createWorkgroup($params["domain"], $workgroup);
 	
 			if($result["is_success"]) {
-				
 				$success = true;
 			} else {
 				$this->vars["error"][] = $result["response_text"];
@@ -678,7 +974,6 @@ class opensrsemail_Controller {
 	 * @return array the correctly formatted array with all parameters for the given template
 	 */
 	private function returnDisplay($template) {
-		
 		// include all language files for the current client
 		foreach($this->language as $language) {
 			include(dirname(__FILE__)."/lang/".$language.".php");

@@ -9,9 +9,14 @@
 {if $deleteRequired}
 	<p class="alert alert-danger">{$lang.deleterequired}</p>
 {else}
-	{foreach from=$error item=error}
-		<p class="alert alert-danger">{$error}</p>
+
+	{if $error|is_array}
+	{foreach from=$error item=e}
+		<p class="alert alert-danger">{$e}</p>
 	{/foreach}
+	{/if}
+
+
 	{if $mailbox}
 		<form action="clientarea.php?action=productdetails&id={$serviceid}&modop=custom&a=mailbox{if !$new}&mailbox={$mailbox.mailbox}&workgroup={$workgroup}{/if}&type={$type}" class="form-stacked" method="post">
 			<input type="hidden" name="modaction" value="save-mailbox" />
@@ -31,7 +36,8 @@
 							<label class="control-label" for="mailbox">{$lang.mailboxname}</label>
 							<div class="control">
 								<input type="hidden" name="mailbox" value="{$mailbox.mailbox}" />
-								<span class="row-text">{$mailbox.mailbox}@{$domain}</span>
+                                <!-- <span class="row-text">{$mailbox.mailbox}@{$domain}</span> -->
+								<span class="row-text">{$mailbox.mailbox}</span>
 							</div>
 						</div>
 					{/if}
@@ -57,15 +63,19 @@
 							</select>
 						</div>
 					</div>
+
+					<div class="form-group">
+						<label class="control-label" for="aliases">{$lang.alias}</label>
+						<div class="control">
+							<textarea class="form-control" type="text" name="aliases" rows="4">{$mailbox.aliases}</textarea>
+						</div>
+					</div>
+
+
 				</div>
 				<div class="col-sm-6">
 					<h3>{$lang.userinfo}</h3>
-					<div class="form-group">
-						<label class="control-label" for="title">{$lang.title}</label>
-						<div class="control">
-							<input class="form-control" type="text" name="title" value="{$mailbox.title}" />
-						</div>
-					</div>
+
 					<div class="form-group">
 						<label class="control-label" for="firstName">{$lang.firstname}</label>
 						<div class="control">
@@ -78,20 +88,13 @@
 							<input class="form-control" type="text" name="lastName" value="{$mailbox.last_name}" />
 						</div>
 					</div>
-					<div class="form-group">
-						<label class="control-label" for="phone">{$lang.phone}</label>
-						<div class="control">
-							<input class="form-control" type="text" name="phone" value="{$mailbox.phone}" />
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="control-label" for="fax">{$lang.fax}</label>
-						<div class="control">
-							<input class="form-control" type="text" name="fax" value="{$mailbox.fax}" />
-						</div>
-					</div>
 				</div>
+
+
+
 			</div>
+
+
 			<button class="btn btn-primary" type="submit">{$lang.save}</button>
 			<a class="btn btn-danger" href="clientarea.php?action=productdetails&id={$serviceid}">{$lang.cancel}</a>
 		</form>

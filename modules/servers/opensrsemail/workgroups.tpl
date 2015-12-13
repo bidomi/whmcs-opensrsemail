@@ -9,9 +9,12 @@
 {if $addSuccess}
 	<p class="alert alert-success">{$lang.workgroupaddsuccess}</p>
 {/if}
-{foreach from=$error item=error}
-	<p class="alert alert-danger">{$error}</p>
+{if $error|is_array}
+{foreach from=$error item=e}
+	<p class="alert alert-danger">{$e}</p>
 {/foreach}
+{/if}
+
 {if count($workgroups)}
 	<table class="table table-framed table-striped">
 		<thead>

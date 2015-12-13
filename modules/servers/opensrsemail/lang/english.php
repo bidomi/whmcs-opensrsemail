@@ -17,6 +17,8 @@ $lang["mailboxes"]["workgroup"] = "Workgroup";
 $lang["mailboxes"]["edit"] = "Edit";
 $lang["mailboxes"]["delete"] = "Delete";
 $lang["mailboxes"]["nomailboxes"] = "There are no mailboxes.";
+$lang["mailboxes"]["destination"] = "Destination";
+
 
 // Mailbox add/edit page
 $lang["mailbox"]["addmailbox"] = "Add Mailbox";
@@ -36,16 +38,19 @@ $lang["mailbox"]["phone"] = "Phone";
 $lang["mailbox"]["fax"] = "Fax";
 $lang["mailbox"]["save"] = "Save";
 $lang["mailbox"]["cancel"] = "Cancel";
+$lang["mailbox"]["alias"] = "Alias (one email address per line)";
+
 
 // Forward add/edit page
 $lang["forward"]["addforward"] = "Add Forwarding Mailbox";
 $lang["forward"]["editforward"] = "Edit Forwarding Mailbox";
 $lang["forward"]["deleterequired"] = 'You have exceeded the number of mailboxe forwards you are allowed to have, please <a href="upgrade.php?type=configoptions&id={$serviceid}">add more forwards</a> in order to continue.';
 $lang["forward"]["mailboxname"] = "Mailbox Name";
-$lang["forward"]["forwardto"] = "Forward To (comma separated email addresses)";
+$lang["forward"]["forwardto"] = "Forward To (one email address per line)";
 $lang["forward"]["workgroup"] = "Workgroup";
 $lang["forward"]["save"] = "Save";
 $lang["forward"]["cancel"] = "Cancel";
+$lang["forward"]["alias"] = "Alias (one email address per line)";
 
 // Alias add page
 $lang["alias"]["addalias"] = "Add Alias";

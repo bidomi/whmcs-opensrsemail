@@ -2,9 +2,13 @@
 <div class="page-header nav-header">
 	<h1>{$lang.addworkgroup}</h1>
 </div>	
-{foreach from=$error item=error}
-	<p class="alert alert-danger">{$error}</p>
+
+{if $error|is_array}
+{foreach from=$error item=e}
+	<p class="alert alert-danger">{$e}</p>
 {/foreach}
+{/if}
+
 <form action="clientarea.php?action=productdetails&id={$serviceid}&modop=custom&a=mailbox" class="form-stacked" method="post">
 	<input type="hidden" name="modaction" value="save-workgroup" />
 	<div class="row">

@@ -34,15 +34,18 @@
 {if $deleteSuccess}
 	<p class="alert alert-success">{$lang.mailboxdeletesuccess}</p>
 {/if}
-{foreach from=$error item=error}
-	<p class="alert alert-error">{$error}</p>
+{foreach from=$error item=e}
+	<p class="alert alert-error">{$e}</p>
 {/foreach}
 {if count($mailboxes)}
 	<table class="table table-framed table-striped">
 		<thead>
 			<tr>
+				<th>&nbsp;</th>
 				<th>{$lang.name}</th>
-				<th>{$lang.type}</th>
+				<!-- <th>{$lang.type}</th> -->
+				
+				<th>{$lang.destination}</th>
 				<th>{$lang.workgroup}</th>
 				<th class="button-column"></th>
 				<th class="button-column"></th>
@@ -51,14 +54,37 @@
 		<tbody>
 			{foreach from=$mailboxes item=mailbox}
 				<tr>
-					<td>{$mailbox.mailbox}</td>
-					<td>{$mailbox.uctype}</td>
-					<td>{$mailbox.workgroup}</td>
-					<td>
-						{if $mailbox.type != "alias"}
-							<a class="btn btn-primary" href="clientarea.php?action=productdetails&id={$serviceid}&modop=custom&a=mailbox&mailbox={$mailbox.mailbox}&workgroup={$mailbox.workgroup}&type={$mailbox.type}" title="{$lang.edit}">{$lang.edit}</a>
-						{/if}
+					<td>{if $mailbox.type == 'mailbox' }<i class="fa fa-envelope"></i>{else}<i class="fa fa-share"></i>{/if}</td>
+								
+					<td align="left"><strong>{$mailbox.mailbox}</strong>
+
+{if $mailbox.aliases|is_array}
+{foreach from=$mailbox.aliases item=alias }
+	<BR> <em>{$alias}</em>
+{/foreach}
+{/if}
+
+
 					</td>
+					
+					<td align="left">
+
+{if $mailbox.forward_email|is_array}
+{foreach from=$mailbox.forward_email item=fwmail }
+	<div>{$fwmail}</div>
+{/foreach}
+{else}
+&nbsp;
+{/if}
+
+</td>
+
+					<td>{$mailbox.workgroup}</td>
+					<td><a class="btn btn-primary" href="clientarea.php?action=productdetails&id={$serviceid}&modop=custom&a=mailbox&mailbox={$mailbox.mailbox}&workgroup={$mailbox.workgroup}&type={$mailbox.type}" title="{$lang.edit}">{$lang.edit}</a>
+					</td>
+
+
+
 					<td>
 						<form action="clientarea.php?action=productdetails&id={$serviceid}" method="post">
 							<input type="hidden" name="modaction" value="delete-mailbox" />

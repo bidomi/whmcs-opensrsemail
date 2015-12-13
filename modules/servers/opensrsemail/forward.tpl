@@ -9,9 +9,14 @@
 {if $deleteRequired}
 	<p class="alert alert-danger">{$lang.deleterequired}</p>
 {else}
-	{foreach from=$error item=error}
-		<p class="alert alert-danger">{$error}</p>
+
+	{if $error|is_array}
+	{foreach from=$error item=e}
+		<p class="alert alert-danger">{$e}</p>
 	{/foreach}
+	{/if}
+
+
 	{if $mailbox}
 		<form action="clientarea.php?action=productdetails&id={$serviceid}&modop=custom&a=mailbox{if !$new}&mailbox={$mailbox.mailbox}&workgroup={$workgroup}{/if}&type={$type}" class="form-stacked" method="post">
 			<input type="hidden" name="modaction" value="save-forward" />
@@ -30,16 +35,24 @@
 							<label class="control-label" for="mailbox">{$lang.mailboxname}</label>
 							<div class="control">
 								<input type="hidden" name="mailbox" value="{$mailbox.mailbox}" />
-								<span class="row-text">{$mailbox.mailbox}@{$domain}</span>
+								<span class="row-text">{$mailbox.mailbox}</span>
 							</div>
 						</div>
 					{/if}
 					<div class="form-group">
-						<label class="control-label" for="password">{$lang.forwardto}</label>
+						<label class="control-label" for="forwardEmail">{$lang.forwardto}</label>
 						<div class="control">
-							<input class="form-control" type="text" name="forwardEmail" value="{$mailbox.forward_email}" />
+							<textarea class="form-control" type="text" name="forwardEmail" rows="4">{$mailbox.forward_email}</textarea>
 						</div>
 					</div>
+
+					<div class="form-group">
+						<label class="control-label" for="aliases">{$lang.alias}</label>
+						<div class="control">
+							<textarea class="form-control" type="text" name="aliases" rows="4">{$mailbox.aliases}</textarea>
+						</div>
+					</div>
+
 					{if $new}
 						<div class="form-group">
 							<label class="control-label" for="workgroup">{$lang.workgroup}</label>

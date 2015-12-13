@@ -1,6 +1,6 @@
 #WHMCS OpenSRS Hosted Email Provisioning Module
 
-This provides the ability to allow customers to purchase mailboxes and forwards and manage them as well as aliases.  By entering your administrator settings for OpenSRS's hosted email you can provide access to your customers for all necessary management functions for creating and managing email accounts.
+This is a fork from OpenSRS.
 
 The following functions are supported in the admin area:
 
